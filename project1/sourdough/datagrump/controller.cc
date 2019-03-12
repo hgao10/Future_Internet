@@ -2,7 +2,7 @@
 
 #include "controller.hh"
 #include "timestamp.hh"
-
+#include "windowsize.hh"
 using namespace std;
 
 /* Default constructor */
@@ -14,7 +14,7 @@ Controller::Controller( const bool debug )
 unsigned int Controller::window_size()
 {
 
-  unsigned int the_window_size = 50;
+  unsigned int the_window_size = WINDOW_SIZE;
 
   if ( debug_ ) {
     cerr << "At time " << timestamp_ms()
