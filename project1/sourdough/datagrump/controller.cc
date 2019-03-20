@@ -5,7 +5,7 @@
 #include "windowsize.hh"
 using namespace std;
 
-#define TARGET 60
+#define TARGET 55
 #define INTERVAL 40
 /* Default constructor */
 Controller::Controller( const bool debug )
