@@ -9,16 +9,6 @@ class Controller
 {
 private:
   bool debug_; /* Enables debugging output */
-  unsigned int windowsize_;
-  //unsigned int ssthresh_;
-  unsigned int state_;
-  unsigned int dup_ack_counter_;
-  unsigned int dup_ack_;
-  bool first_time_;
-  unsigned int num_backoffs_;
-  uint64_t next_time_;
-  unsigned int ssthresh_;
-  bool first_timeout_;
 
   /* Add member variables here */
 
