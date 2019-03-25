@@ -137,7 +137,7 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
   	next_time_ = current_time + INTERVAL/num_backoffs_;
   	num_backoffs_ +=1;
   	ssthresh_ = windowsize_/2;
-  	windowsize_ = 8; // set it to the window size from last timeout??
+  	windowsize_ = 6; // set it to the window size from last timeout??
   }
   if ( debug_ ) {
     cerr << "At time " << timestamp_ack_received
