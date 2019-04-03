@@ -52,7 +52,7 @@ def abr(
         return 0, current_chunk,0
 
     chunk_size = 4 # seconds
-    reservoir_size = 4 # seconds
+    reservoir_size = 0   # seconds
     cushion_size = 126 # seconds
     buffer_size = chunk_size * (current_chunk - playback_chunk) # seconds
     print("buffer_size = %d" %buffer_size)
