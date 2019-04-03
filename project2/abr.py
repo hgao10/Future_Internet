@@ -58,16 +58,19 @@ def abr(
     print("buffer_size = %d" %buffer_size)
     rate_val = get_rate(buffer_size, reservoir_size, cushion_size)
     print("rate_val = %d" %rate_val)
+
+    rates = [300, 750, 1200, 1850, 2850, 4300]
+    current_rate = rates[current_chunk_quality]
     # determine next rates to possibly choose
     if(current_chunk_quality == 5):
-        R_plus = 5
+        R_plus = current_rate
     else:
-        R_plus = min([x for x in [0,1,2,3,4,5] if x > current_chunk_quality])
+        R_plus = min([x for x in rates if x > current_rate])
 
     if(current_chunk_quality == 0):
-        R_minus = 0
+        R_minus = current_rate
     else:
-        R_minus = max([x for x in [0,1,2,3,4,5] if x < current_chunk_quality]) 
+        R_minus = max([x for x in rates if x < current_rate]) 
     
     if(buffer_size < reservoir_size):
         print("buffer size < reserv. size")
@@ -77,10 +80,10 @@ def abr(
         rate_next = 5
     elif(rate_val >= R_plus):
         print("choose R_plus")
-        rate_next = max([x for x in [0,1,2,3,4,5] if x < rate_val])
+        rate_next = max([x for x in [0,1,2,3,4,5] if rates[x] < rate_val])
     elif(rate_val <= R_minus):
         print("choose R_minus")
-        rate_next = min([x for x in [0,1,2,3,4,5] if x > rate_val])
+        rate_next = min([x for x in [0,1,2,3,4,5] if rates[x] > rate_val])
     else:
         print("stay at current rate")
         rate_next = current_chunk_quality
@@ -93,5 +96,5 @@ def abr(
     return rate_next, next_chunk, current_time + timeout # after 4s check again
 
 def get_rate(buffer_size, reservoir_size, cushion_size):
-    return ((5-0)/cushion_size) * (buffer_size - reservoir_size)
+    return ((4300 - 300)/cushion_size) * (buffer_size - reservoir_size)
 
