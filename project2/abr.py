@@ -43,25 +43,25 @@ def abr(
                 - timeout is in absolute time, usually set it as current_time+X (where min X is 200ms)
                 - timeout 0 means no timeout
     """
-    print("Hello World!")
+    timeout = 20
     if(typ == 0):
-        print("Initial request")
-        return 0,0,current_time + 1
+        return 0,0,current_time + timeout
     elif(typ == 3):
-        print("Rebuffering!")
-        return 0,current_chunk, current_time + 1
-    
+        return 0,current_chunk, current_time + timeout
+    elif(current_chunk == -1):
+        return 0, current_chunk,0
+
     chunk_size = 4 # seconds
-    reservoir_size = 90 # seconds
+    reservoir_size = 12 # seconds
     cushion_size = 126 # seconds
     buffer_size = chunk_size * (current_chunk - playback_chunk) # seconds
-    
+    print("buffer_size = %d" %buffer_size)
+    rate_val = get_rate(buffer_size, reservoir_size, cushion_size)
+    print("rate_val = %d" %rate_val)
     # determine next rates to possibly choose
     if(current_chunk_quality == 5):
-        print("set R_plus")
         R_plus = 5
     else:
-        print("set R_plus")
         R_plus = min([x for x in [0,1,2,3,4,5] if x > current_chunk_quality])
 
     if(current_chunk_quality == 0):
@@ -75,12 +75,12 @@ def abr(
     elif(buffer_size >= (reservoir_size + cushion_size)):
         print("maximal rate")
         rate_next = 5
-    elif(get_rate(buffer_size, reservoir_size, cushion_size) >= R_plus):
+    elif(rate_val >= R_plus):
         print("choose R_plus")
-        rate_next = max([x for x in [0,1,2,3,4,5] if x < get_rate(buffer_size)])
-    elif(get_rate(buffer_size, reservoir_size, cushion_size) <= R_minus):
+        rate_next = max([x for x in [0,1,2,3,4,5] if x < rate_val])
+    elif(rate_val <= R_minus):
         print("choose R_minus")
-        rate_next = min([x for x in [0,1,2,3,4,5] if x > get_rate(buffer_size)])
+        rate_next = min([x for x in [0,1,2,3,4,5] if x > rate_val])
     else:
         print("stay at current rate")
         rate_next = current_chunk_quality
@@ -89,9 +89,9 @@ def abr(
     #if we arrived to the end of the stream or it is not the initial call and the download has finished
     if next_chunk == len(video[0]):
         next_chunk = -1
-
-    return rate_next, next_chunk, current_time + 1 # after 4s check again
+    print("next chunk= %d" %(next_chunk))
+    return rate_next, next_chunk, current_time + timeout # after 4s check again
 
 def get_rate(buffer_size, reservoir_size, cushion_size):
-    return (5-0)/cushion_size * (buffer_size - reservoir_size)
+    return ((5-0)/cushion_size) * (buffer_size - reservoir_size)
 
