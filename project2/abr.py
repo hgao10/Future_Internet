@@ -1,3 +1,9 @@
+def last_chunk_number(n):
+    last_chunk_number.value = n
+
+def get_last_chunk():
+    return last_chunk_number.value
+
 def abr(
     typ,
     current_time,
@@ -45,6 +51,7 @@ def abr(
     """
     timeout = 20
     if(typ == 0):
+        last_chunk_number(0)
         return 0,0,current_time + timeout
     elif(typ == 3):
         return 0,current_chunk, current_time + timeout
@@ -53,7 +60,7 @@ def abr(
 
     chunk_size = 4 # seconds
     reservoir_size = 0   # seconds
-    cushion_size = 126 # seconds
+    cushion_size = 115 # seconds
     buffer_size = chunk_size * (current_chunk - playback_chunk) # seconds
     print("buffer_size = %d" %buffer_size)
     rate_val = get_rate(buffer_size, reservoir_size, cushion_size)
@@ -88,10 +95,17 @@ def abr(
         print("stay at current rate")
         rate_next = current_chunk_quality
     
-    next_chunk = current_chunk+1
+    if(current_chunk != -1):
+        next_chunk = current_chunk+1
+    else:
+        next_chunk = get_last_chunk()+1
+
+    # only overwrite previous state if current_chunk is a valid chunk
+    if(current_chunk != -1):
+        last_chunk_number(next_chunk)
+
     #if we arrived to the end of the stream or it is not the initial call and the download has finished
     if next_chunk == len(video[0]):
-        # TODO: if last chunk == -1, then should not start with 0 again but proceed from highest seen chunk number +1
         next_chunk = -1
     print("next chunk= %d" %(next_chunk))
     return rate_next, next_chunk, current_time + timeout # after 4s check again
