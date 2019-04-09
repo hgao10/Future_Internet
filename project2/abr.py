@@ -59,8 +59,8 @@ def abr(
         return 0, current_chunk,0
 
     chunk_size = 4 # seconds
-    reservoir_size = 0   # seconds
-    cushion_size = 115 # seconds
+    reservoir_size = 9   # seconds
+    cushion_size = 90 # seconds
     buffer_size = chunk_size * (current_chunk - playback_chunk) # seconds
     print("buffer_size = %d" %buffer_size)
     rate_val = get_rate(buffer_size, reservoir_size, cushion_size)
@@ -111,5 +111,5 @@ def abr(
     return rate_next, next_chunk, current_time + timeout # after 4s check again
 
 def get_rate(buffer_size, reservoir_size, cushion_size):
-    return ((4300 - 300)/cushion_size) * (buffer_size - reservoir_size)
+    return ((4300 - 300)/cushion_size) * (buffer_size - reservoir_size) + 300
 
