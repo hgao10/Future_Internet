@@ -96,8 +96,8 @@ def abr(
 
     print("next chunk= %d" %(next_chunk))
     chunk_size = 4 # seconds
-    reservoir_size = 9   # seconds
-    cushion_size = 46 # seconds
+    reservoir_size = 9  # seconds
+    cushion_size = 43 # seconds
     buffer_size = chunk_size * (current_chunk - playback_chunk) # seconds
 
     rate_next = 0
