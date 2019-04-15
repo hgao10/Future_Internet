@@ -4,6 +4,33 @@ def last_chunk_number(n):
 def get_last_chunk():
     return last_chunk_number.value
 
+def set_last_buffer(n):
+    set_last_buffer.value = n
+
+def get_last_buffer():
+    return set_last_buffer.value
+
+def set_startup_phase(n):
+    set_startup_phase.value = n
+
+def get_startup_phase():
+    return set_startup_phase.value
+
+def get_downloadchunk():
+    return set_downloadchunk.value
+
+def set_downloadchunk(n):
+    set_downloadchunk.value = n
+
+def get_download_starttime():
+    return set_download_starttime.value
+
+def set_download_starttime(n):
+    set_download_starttime.value = n
+
+
+
+
 def abr(
     typ,
     current_time,
@@ -59,14 +86,23 @@ def abr(
     # print("video_min: %s, video_max: %s" %(video_min, video_max))
 
     timeout = 1000000
+    download_time = 1000
     print("ABR invoke type :%s\n" % typ)
     if(typ == 1):
         print("ABR: call because a chunk has been downloaded, current_chunk: %s, size: %s, downloaded:%s\n" %
             (current_chunk,video[current_chunk_quality][current_chunk], current_chunk_download ))
+        if(current_chunk == get_downloadchunk()):
+            download_time = current_time - get_download_starttime()
+            set_download_starttime(current_time)
+            set_downloadchunk(current_chunk+1)
 
     if(typ == 0):
-        last_chunk_number(0)
-        print("type 0 ")
+        last_chunk_number(0) 
+        set_last_buffer(0)
+        set_startup_phase(True)
+        set_downloadchunk(0)
+        set_download_starttime(current_time)
+        print("type 0, startup phase set to trune :%s\n"%(get_startup_phase()))
         return 0,0,current_time + timeout
     elif(typ == 3):
         print("type 3 rebuffering, current_chunk: %s\n" %(current_chunk))
@@ -95,10 +131,34 @@ def abr(
 
 
     print("next chunk= %d" %(next_chunk))
+    startup_period = 100
+    buffer_startup_scale = 0.875
+
     chunk_size = 4 # seconds
     reservoir_size = 9   # seconds
-    cushion_size = 46 # seconds
+    cushion_size = 43 # seconds
     buffer_size = chunk_size * (current_chunk - playback_chunk) # seconds
+    
+    buffer_delta = buffer_size - get_last_buffer()
+    set_last_buffer(buffer_size)
+    print("buffer_delta: %s\n" %(buffer_delta))
+    
+    rate_next_startup = 0
+    # calculate rate during stateup phase
+    if (current_time <= startup_period and get_startup_phase() == True):
+        #if (buffer_delta > 4 * buffer_startup_scale):
+        #threshold_scale = float(-6/(cushion_size+reservoir_size))
+     
+        threshold_scale=float( -0.0115 *float(buffer_size)) + float(9)
+        print("ABR: startup phase threshold_scale %f,buffer_size: %s, download_time: %s\n" %(threshold_scale, buffer_size, download_time))
+        if(download_time < 4/threshold_scale):
+            print("download time meets the threshold, increase")
+            rate_next_startup = min(current_chunk_quality+1,5)
+
+
+    # if (buffer_delta < 0 and get_startup_phase() != False):  
+    #     set_startup_phase(False)
+    #     print("set startup phase to false %s due to buffer decreasing\n" %(get_startup_phase()))
 
     rate_next = 0
     print("buffer_size = %d" %buffer_size)
@@ -148,6 +208,11 @@ def abr(
         print("stay at current rate")
         rate_next = current_chunk_quality
     
+    if (rate_next > rate_next_startup and get_startup_phase() != False):
+        set_startup_phase(False)
+        print("chunk map rate is greater than startup rate, set startup phase to False: %s\n" %(get_startup_phase()))
+
+    rate_next = max(rate_next, rate_next_startup)
     print("rate_next: %s, next_chunk: %s, current_time+timeout: %s\n" %(rate_next, next_chunk, current_time+timeout) )
     return rate_next, next_chunk, current_time + timeout # after 4s check again
 
