@@ -17,7 +17,7 @@ with open("../output_data/sat_links.txt", 'w') as file:
 			file.write("%s\n" %(",".join([str(sat1), str(sat2), str(util.compute_isl_length(sat1, sat2, satPositions))])))
 
 	# connect to satelites in orbit k -3
-	for k in range(1,40):
+	for k in range(40):
 		for l in range(40):
 			sat1 = k*40 + l
 			sat2 = ((k-3)%40)*40 + l
