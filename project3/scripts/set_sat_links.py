@@ -48,7 +48,13 @@ for sat1, sat2 in sat_pairs:
     if(dist < 5015):
         G.add_edge(sat1,sat2,length=float(dist))
 # 2.
-for elem in city_pairs.values():
+# sort city pairs such that pairs with highest distance are first evaluated
+def take_third(elem):
+    return elem['geo_dist']
+
+ranked_city_pairs = [x for x in city_pairs.values()]
+ranked_city_pairs.sort(key=take_third, reverse=True)
+for elem in ranked_city_pairs:
     city1 = elem["city_1"]
     city2 = elem["city_2"]
     util.add_coverage_for_city(int(city1), city_coverage,G)
@@ -77,38 +83,75 @@ for elem in city_pairs.values():
             # check how many edges need to be removed, remove optimal edge (for shortest path of current city pair)
             for sat,isls in to_remove:
                 print(sat,isls)
+                sats_to_remove = [s for (s,y) in to_remove]
                 # at beginning and end of path only one new link was added (for sure) --> remove
+                # always check if both ends of an edge are in to_remove before removing the edge and then only remove the edge once
                 if sats[0] == sat:
                     # remove this edge from G
+                    if sats[1] in sats_to_remove:
+                        to_remove.remove((sats[1],5))
                     G.remove_edge(sat, sats[1])
                     path = nx.shortest_path(G,city1,city2,weight='length')
                 elif sat == sats[-1]:
                     # remove this edge from G
+                    if sats[1] in sats_to_remove:
+                        to_remove.remove((sats[1],5))
                     G.remove_edge(sats[-2],sat)
                     path = nx.shortest_path(G,city1,city2,weight='length')
                 else:
                     # if deg == 6 remove both new edges
                     index = sats.index(sat)
                     if isls == 6:
+                        if sats[index-1] in sats_to_remove:
+                            ind = sats_to_remove.index(sats[index-1])
+                            deg = to_remove[ind][1] # return number of isls for this satellite
+                            if deg == 5:
+                                to_remove.remove((sats[index-1],deg))
+                            else:
+                                to_remove[ind] = (sats[index-1],deg - 1)
+                        if sats[index+1] in sats_to_remove:
+                            ind = sats_to_remove.index(sats[index+1])
+                            deg = to_remove[ind][1] # return number of isls for this satellite
+                            if deg == 5:
+                                to_remove.remove((sats[index+1],deg))
+                            else:
+                                to_remove[ind] = (sats[index+1],deg - 1)
                         G.remove_edge(sats[index-1],sat)
                         G.remove_edge(sat,sats[index+1])
                         path = nx.shortest_path(G,city1,city2,weight='length')
-                    else:
+                    else: 
                         # find optimal edge to remove
                         min_path_len = 0
-                        # test for path length with incoming edge removed
-                        G.remove_edge(sats[index-1],sat)
-                        path_len_1 = nx.shortest_path_length(G,city1, city2,weight='length')
-                        G.add_edge(sats[index-1],sat)
-                        # test for path length with outgoing edge removed
-                        G.remove_edge(sat, sats[index+1])
-                        path_len_2 = nx.shortest_path_length(G, city1,city2,weight='length')
-                        G.add_edge(sat,sats[index+1])
+                        path_len_1 = 0
+                        path_len_2 = 0
+                        if G.has_edge(sats[index-1],sat):
+                            # test for path length with incoming edge removed
+                            G.remove_edge(sats[index-1],sat)
+                            path_len_1 = nx.shortest_path_length(G,city1, city2,weight='length')
+                            G.add_edge(sats[index-1],sat)
+                        if G.has_edge(sat,sats[index+1]):
+                            # test for path length with outgoing edge removed
+                            G.remove_edge(sat, sats[index+1])
+                            path_len_2 = nx.shortest_path_length(G, city1,city2,weight='length')
+                            G.add_edge(sat,sats[index+1])
                         # remove optimal edge and compute path anew
-                        if path_len_1 <= path_len_2:
+                        if path_len_1 == 0:
+                            G.remove_edge(sat,sats[index+1])
+                            path = nx.shortest_path(G,city1,city2,weight='length')
+                        elif path_len_2 == 0:
+                            G.remove_edge(sats[index-1],sat)
+                            path = nx.shortest_path(G,city1,city2,weight='length')
+                        elif path_len_1 <= path_len_2:
                             G.remove_edge(sats[index-1],sat)
                             path = nx.shortest_path(G,city1,city2,weight='length')
                         else:
+                            if sats[index+1] in sats_to_remove:
+                                ind = sats_to_remove.index(sats[index+1])
+                                deg = to_remove[ind][1] # return number of isls for this satellite
+                                if deg == 5:
+                                    to_remove.remove((sats[index+1],deg))
+                                else:
+                                    to_remove[ind] = (sats[index+1],deg - 1)
                             G.remove_edge(sat,sats[index+1])
                             path = nx.shortest_path(G,city1,city2,weight='length')
             sats = path[1:-1]
