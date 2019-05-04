@@ -161,61 +161,123 @@ def compute_sat_city_length(sat1, city1, sat_positions, city_positions):
 
 # 		next_sat_list = all_sat + [city1] - [current_path]
 # 		previous_node = next_sat
+chosen_sat_list = {}
+all_sat = [ x for x in range(1601)]
+overflow_sat_list = []
+chosen_isls = []
+for i in all_sat:
+	chosen_sat_list[i] = 0
 
-all_sat = [ x for x in range(1200)]
-
-city_pair = city_pairs[0]
-city1 = city_pair['city_1'] #city1 ID  
-all_sat.append(city1)
-
-city2 = city_pair['city_2'] #city2 ID
-print("city1: %s, city2: %s" %(city1, city2))
-city1_coverage =[ sat for sat in city_coverage[str(city1)] ]# a list of sat that city1 covers
-city2_coverage = [ int(sat) for sat in city_coverage[str(city2)] ]
-
-next_sat_list = city1_coverage[:]
-path_chosen = []
-path_length = {}
-
-previous_node = city1
-current_path = [previous_node]
-while True:
+for city_pair in ranked_city_pairs:
+	city1 = city_pair['city_1'] #city1 ID  
+	city2 = city_pair['city_2'] #city2 ID
 	
-	for next_sat in next_sat_list:
-		# firxt time
-		current_path_length = 0
-		next_sat_to_city_dist = compute_sat_city_length(int(next_sat), int(city2), sat_positions, city_positions)
-		print("next_sat:%s, next_sat to destination dist: %s \n" %(next_sat, next_sat_to_city_dist))
-		if previous_node == city1:
-			current_path_length = city_coverage[str(city1)][str(next_sat)] + next_sat_to_city_dist
+
+	all_sat[-1] = city1
+
+	print("city1: %s, city2: %s" %(city1, city2))
+	city1_coverage =[ sat for sat in city_coverage[str(city1)] ]# a list of sat that city1 covers
+	city2_coverage = [ int(sat) for sat in city_coverage[str(city2)] ]
+
+	next_sat_list = city1_coverage[:]
+	path_chosen = []
+	path_length = {}
+
+	previous_node = city1
+	current_path = [previous_node]
+	
+	while True:
 		
-		else: #both previous node is a satellite
-			isl_length = util.compute_isl_length(int(previous_node), int(next_sat), sat_positions)
-			if isl_length > MAX_ISL_LENGTH:
-				continue
-			current_path_length = isl_length + next_sat_to_city_dist
-			print("current_path_length of last isls: %s and current_path_length: %s\n" %(isl_length, current_path_length))
-		path_length[current_path_length] = int(next_sat)
+		for next_sat in next_sat_list:
+			# firxt time
+			current_path_length = 0
+			next_sat_to_city_dist = compute_sat_city_length(int(next_sat), int(city2), sat_positions, city_positions)
+			#print("next_sat:%s, next_sat to destination dist: %s \n" %(next_sat, next_sat_to_city_dist))
+			if previous_node == city1:
+				#current_path_length = city_coverage[str(city1)][str(next_sat)] + next_sat_to_city_dist
+				print("previous_node is city")
+			else: #both previous node is a satellite
+				isl_length = util.compute_isl_length(int(previous_node), int(next_sat), sat_positions)
+				if isl_length > MAX_ISL_LENGTH:
+					continue
+				#current_path_length = isl_length + next_sat_to_city_dist
+				#print("current_path_length of last isls: %s and current_path_length: %s\n" %(isl_length, current_path_length))
+			path_length[next_sat_to_city_dist] = int(next_sat)
 
 
-	min_path_length = min([path for path in path_length.keys()])
+		min_path_length = min([path for path in path_length.keys()])
+		chosen_sat = path_length[min_path_length]
+		print("chosen_sat: %d" %(chosen_sat))
 
-	current_path.append(path_length[min_path_length])
-	print("path length dictionary before clearing: %s\n"%(path_length))
-	path_length.clear()
-	print("path_length should be empty:%s\n" %(path_length))
-	print("min_path_length: %s and append sat:%s\n" %(min_path_length, current_path[-1]))
-	if next_sat in city2_coverage:
-		break
+		if (chosen_sat in city2_coverage) and (current_path[-1] == city1):
+			print("two cities are only one sat apart") #no need to update isls or chosen sat
+			current_path.append(chosen_sat)
+			path_length.clear()
+			break
+		if current_path[-1] == city1:
+			print("update path but no need to update chosen sat links or chosen sat counts\n")
+			current_path.append(chosen_sat)
+		elif ((current_path[-1], chosen_sat) in chosen_isls) or ((chosen_sat, current_path[-1]) in chosen_isls): #chosen path is already there
+			print("chosen isls :%s and current isl in examination is :%s\n" %(chosen_isls, ",".join([str(current_path[-1]), str(chosen_sat)])))
+			current_path.append(chosen_sat)
+			print("chosen isl already exist\n")
+		elif (chosen_sat_list[current_path[-1]] < 4) and (chosen_sat_list[chosen_sat] <4): #chosen isl not there, check if could be a valid isl
+			chosen_isls.append((current_path[-1], chosen_sat))
+			chosen_sat_list[current_path[-1]] += 1
+			chosen_sat_list[chosen_sat] +=1
+			current_path.append(chosen_sat)
+			print("adding chosen isls and update chosen sat list\n")
+			if int(current_path[-1]) in city2_coverage:
+				print("In the radar")
+				path_length.clear()
+				break
+		elif (chosen_sat_list[current_path[-1]] >= 4):
+			if (current_path[-1] not in overflow_sat_list):
+				overflow_sat_list.append(current_path[-1])
+				print("update overflow list, add current_path[-1] %s\n" %(current_path[-1]))
+			#remove previous node
+			del current_path[-1]
+			print("delete last item in the list, current path is :%s\n" %(current_path))
 
-	next_sat_list = set(all_sat) - set(current_path)
-	print("next_sat_list")
-	previous_node = current_path[-1]
-	print("previous_node: %s, current_path:%s\n" %(previous_node, current_path))
 
-print(current_path)
+		if chosen_sat_list[chosen_sat] >= 4 and (chosen_sat not in overflow_sat_list):
+			overflow_sat_list.append(chosen_sat)
+			print("append chosen_sat %d to overflow list and the list is now: %s\n" %(chosen_sat, overflow_sat_list))
+
+		# elif chosen_sat_list.count(chosen_sat) >= 4:
+		# 	if (chosen_sat not in overflow_sat_list):
+		# 		overflow_sat_list.append(chosen_sat)
+		# 		print("append sat %d to overflow list and the list is now: %s\n" %(chosen_sat, overflow_sat_list))	
+		# else:
+		# 	current_path.append(chosen_sat)
+		# 	chosen_sat_list.append(chosen_sat)
+		# 	print("path length dictionary before clearing: %s\n"%(path_length))
+		# 	print("path_length should be empty:%s\n" %(path_length))
+		# 	print("min_path_length: %s and append sat:%s\n" %(min_path_length, current_path[-1]))
+		# 	if int(current_path[-1]) in city2_coverage:
+		# 		print("In the radar")
+		# 		break
+
+		path_length.clear()
+		next_sat_list = set(all_sat) - set(current_path) - set(overflow_sat_list) 
+		#print("next_sat_list: %s" %(next_sat_list))
+		previous_node = current_path[-1]
+		print("previous_node: %s, current_path:%s\n" %(previous_node, current_path))
 
 
+
+	print("final chosen path for %s and %s is %s\n" %(city1,city2,current_path))
+
+for sat in chosen_sat_list:
+
+	if chosen_sat_list[sat] > 4:
+		print ("ERROR")
+
+with open("../output_data/sat_links.txt", 'w') as file:
+	for isl in chosen_isls:
+		sat1 = isl[0]
+		sat2 = isl[1]
+		file.write("%s\n" %(",".join([str(sat1), str(sat2), str(util.compute_isl_length(sat1, sat2, sat_positions))])))
 
 
 
