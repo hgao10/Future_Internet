@@ -5,6 +5,9 @@ except (ImportError, SystemError):
 #set_sat_links
 from collections import defaultdict
 import math
+
+#from optimize_test import permute_city_pairs
+
 EARTH_RADIUS = 6371  # Kms
 MAX_ISL_LENGTH=5014 #km
 sat_positions = {}
@@ -37,11 +40,13 @@ def take_third(elem):
 	return elem['geo_dist']
 
 # rank city pairs by distance from max to min
+
 city_pairs = util.read_city_pair_file("../input_data/city_pairs.txt")
 ranked_city_pairs = [x for x in city_pairs.values()] # each element is a dictionary city1: city2: geo_dist
-ranked_city_pairs.sort(key=take_third, reverse=True)
 
-#print(ranked_city_pairs)
+#city_pairs_all = list(itertools.permutations(ranked_city_pairs))
+#ranked_city_pairs.sort(key=take_third, reverse=True)
+
 # start from one city's coverage, check for shortest distance, choose top 3
 
 
@@ -57,16 +62,6 @@ def read_coverage(coverage_file):
     lines = [line.rstrip('\n') for line in open(coverage_file)]
     for i in range(len(lines)):
         val = lines[i].split(",")
-        # if str(val[0]) not in city_coverage.keys():
-        # 	city_coverage_dist[str(val[0])+"_"+]
-        # 	city_coverage[str(val[0])] = [{
-
-        #     "sat": int(val[1]),
-        #     "dist": float(val[2])}]
-        # else:
-        # 	city_coverage[str(val[0])].append({
-        #     "sat": int(val[1]),
-        #     "dist": float(val[2])})
         city_coverage[str(val[0])][str(val[1])] = float(val[2]) # city_coverage[city][sat] = distance
 
         
@@ -124,43 +119,6 @@ def compute_sat_city_length(sat1, city1, sat_positions, city_positions):
     dist = math.sqrt(math.pow((x2 - x1), 2) + math.pow((y2 - y1), 2) + math.pow((z2 - z1), 2))
     return dist
 
-#print(compute_sat_city_length(1, 10001, sat_positions, city_positions))
-
-# for city_pair in ranked_city_pairs:
-# 	city1 = city_pair['city_1'] #city1 ID  
-# 	city2 = city_pair['city_2'] #city2 ID
-# 	city1_coverage =[ sat for sat in city_coverage[str(city1)] ]# a list of sat that city1 covers
-# 	city2_coverage = [ sat for sat in city_coverage[str(city2)] ]
-# 	next_sat_list = city1_coverage[:]
-# 	path_chosen = []
-# 	path_length = {}
-
-# 	previous_node = city1
-# 	current_path = [previous_node]
-# 	while True:
-		
-# 		for next_sat in next_sat_list:
-# 			# firxt time
-# 			current_path_length = 0
-# 			next_sat_to_city_dist = compute_sat_city_length(int(next_sat), int(city1), sat_positions, city_positions)
-# 			if previous_node == city1:
-# 				current_path_length = city_coverage[str(city1)][str(next_sat)] + next_sat_to_city_dist
-			
-# 			else: #both previous node is a satellite
-# 				isl_length = compute_isl_length(int(previous_node), int(next_sat), sat_positions)
-# 				if isl_length > MAX_ISL_LENGTH:
-# 					break
-# 				current_path_length = isl_length + next_sat_to_city_dist
-
-# 			path_length[current_path_length] = next_sat
-
-# 		min_path_length = min([path for path in path_length.values()])
-# 		current_path.append(path_length[min_path_length])
-# 		if next_sat in city2_coverage:
-# 			break
-
-# 		next_sat_list = all_sat + [city1] - [current_path]
-# 		previous_node = next_sat
 chosen_sat_list = {}
 all_sat = [ x for x in range(1601)]
 overflow_sat_list = []
@@ -187,7 +145,7 @@ for city_pair in ranked_city_pairs:
 	current_path = [previous_node]
 	
 	while True:
-		
+		#for k in range(2):	
 		for next_sat in next_sat_list:
 			# firxt time
 			current_path_length = 0
@@ -244,20 +202,6 @@ for city_pair in ranked_city_pairs:
 			overflow_sat_list.append(chosen_sat)
 			print("append chosen_sat %d to overflow list and the list is now: %s\n" %(chosen_sat, overflow_sat_list))
 
-		# elif chosen_sat_list.count(chosen_sat) >= 4:
-		# 	if (chosen_sat not in overflow_sat_list):
-		# 		overflow_sat_list.append(chosen_sat)
-		# 		print("append sat %d to overflow list and the list is now: %s\n" %(chosen_sat, overflow_sat_list))	
-		# else:
-		# 	current_path.append(chosen_sat)
-		# 	chosen_sat_list.append(chosen_sat)
-		# 	print("path length dictionary before clearing: %s\n"%(path_length))
-		# 	print("path_length should be empty:%s\n" %(path_length))
-		# 	print("min_path_length: %s and append sat:%s\n" %(min_path_length, current_path[-1]))
-		# 	if int(current_path[-1]) in city2_coverage:
-		# 		print("In the radar")
-		# 		break
-
 		path_length.clear()
 		next_sat_list = set(all_sat) - set(current_path) - set(overflow_sat_list) 
 		#print("next_sat_list: %s" %(next_sat_list))
@@ -278,7 +222,6 @@ with open("../output_data/sat_links.txt", 'w') as file:
 		sat1 = isl[0]
 		sat2 = isl[1]
 		file.write("%s\n" %(",".join([str(sat1), str(sat2), str(util.compute_isl_length(sat1, sat2, sat_positions))])))
-
 
 
 
