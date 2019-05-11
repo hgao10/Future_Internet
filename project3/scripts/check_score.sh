@@ -46,7 +46,7 @@ mkdir temp
 
 #Validate link length for all links
 echo "Validating ISL lengths for all ISLs"
-python satellitePairDistanceCalculator.py $sat_positions_file $isl_file >> temp/sat_links_verified.txt
+python3.6 satellitePairDistanceCalculator.py $sat_positions_file $isl_file >> temp/sat_links_verified.txt
 invalidLinks=0
 invalidLinksDesc=""
 IFS=","

@@ -122,7 +122,7 @@ def compute_sat_links(city_pairs_chosen):
 
 		all_sat[-1] = city1
 
-		print("city1: %s, city2: %s" %(city1, city2))
+		#print("city1: %s, city2: %s" %(city1, city2))
 		city1_coverage =[ sat for sat in city_coverage[str(city1)] ]# a list of sat that city1 covers
 		city2_coverage = [ int(sat) for sat in city_coverage[str(city2)] ]
 
@@ -154,47 +154,47 @@ def compute_sat_links(city_pairs_chosen):
 
 			min_path_length = min([path for path in path_length.keys()])
 			chosen_sat = path_length[min_path_length]
-			print("chosen_sat: %d" %(chosen_sat))
+			#print("chosen_sat: %d" %(chosen_sat))
 
 			if (chosen_sat in city2_coverage) and (current_path[-1] == city1):
-				print("two cities are only one sat apart") #no need to update isls or chosen sat
+				#print("two cities are only one sat apart") #no need to update isls or chosen sat
 				current_path.append(chosen_sat)
 				path_length.clear()
 				break
 			if current_path[-1] == city1:
-				print("update path but no need to update chosen sat links or chosen sat counts\n")
+				#print("update path but no need to update chosen sat links or chosen sat counts\n")
 				current_path.append(chosen_sat)
 			elif ((current_path[-1], chosen_sat) in chosen_isls) or ((chosen_sat, current_path[-1]) in chosen_isls): #chosen path is already there
-				print("chosen isls :%s and current isl in examination is :%s\n" %(chosen_isls, ",".join([str(current_path[-1]), str(chosen_sat)])))
+				#print("chosen isls :%s and current isl in examination is :%s\n" %(chosen_isls, ",".join([str(current_path[-1]), str(chosen_sat)])))
 				current_path.append(chosen_sat)
-				print("chosen isl already exist\n")
+				#print("chosen isl already exist\n")
 			elif (chosen_sat_list[current_path[-1]] < 4) and (chosen_sat_list[chosen_sat] <4): #chosen isl not there, check if could be a valid isl
 				chosen_isls.append((current_path[-1], chosen_sat))
 				chosen_sat_list[current_path[-1]] += 1
 				chosen_sat_list[chosen_sat] +=1
 				current_path.append(chosen_sat)
-				print("adding chosen isls and update chosen sat list\n")
+				#print("adding chosen isls and update chosen sat list\n")
 				if int(current_path[-1]) in city2_coverage:
-					print("In the radar")
+					#print("In the radar")
 					path_length.clear()
 					break
 			elif (chosen_sat_list[current_path[-1]] >= 4):
 				if (current_path[-1] not in overflow_sat_list):
 					overflow_sat_list.append(current_path[-1])
-					print("update overflow list, add current_path[-1] %s\n" %(current_path[-1]))
+					#print("update overflow list, add current_path[-1] %s\n" %(current_path[-1]))
 				#remove previous node
 				del current_path[-1]
-				print("delete last item in the list, current path is :%s\n" %(current_path))
+				#print("delete last item in the list, current path is :%s\n" %(current_path))
 
 			if chosen_sat_list[chosen_sat] >= 4 and (chosen_sat not in overflow_sat_list):
 				overflow_sat_list.append(chosen_sat)
-				print("append chosen_sat %d to overflow list and the list is now: %s\n" %(chosen_sat, overflow_sat_list))
+				#print("append chosen_sat %d to overflow list and the list is now: %s\n" %(chosen_sat, overflow_sat_list))
 
 			path_length.clear()
 			next_sat_list = set(all_sat) - set(current_path) - set(overflow_sat_list) 
 			#print("next_sat_list: %s" %(next_sat_list))
 			previous_node = current_path[-1]
-			print("previous_node: %s, current_path:%s\n" %(previous_node, current_path))
+			#print("previous_node: %s, current_path:%s\n" %(previous_node, current_path))
 
 		print("final chosen path for %s and %s is %s\n" %(city1,city2,current_path))
 
@@ -217,7 +217,7 @@ ranked_city_pairs = [x for x in city_pairs.values()] # each element is a diction
 # PermuteCount = 3
 # permute_city_pairs_partial = list(itertools.permutations(ranked_city_pairs[:PermuteCount]))
 
-ShuffleCount = 2
+ShuffleCount = 20
 score_board = {}
 ranked_city_pairs_dic = {}
 # for i in range(len(permute_city_pairs_partial)):
