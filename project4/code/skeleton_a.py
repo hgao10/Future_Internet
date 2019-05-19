@@ -39,12 +39,6 @@ def solve(in_graph_filename, in_demands_filename, in_paths_filename, out_rates_f
     paths_x_to_y = wanteutility.get_paths_x_to_y(all_paths, graph)
     all_flows = wanteutility.get_all_flows(all_paths, demands)
 
-    # Perform max-min fair allocation algorithm
-    # TODO: ...
-    # TODO: ...
-    print("TODO")
-    # TODO: ...
-    # TODO: ...
     final_rate={}
     #make a copy of the graph for updating weight
     new_graph=graph.copy()
@@ -101,7 +95,7 @@ def solve(in_graph_filename, in_demands_filename, in_paths_filename, out_rates_f
 
         all_flows= list(set(all_flows)-set(remove_flows))
         #print(all_flows)
-        print(final_rate)
+        #print(final_rate)
 
     # Finally, write the rates to the output file
     with open(out_rates_filename, "w+") as rate_file:
