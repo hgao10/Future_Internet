@@ -60,15 +60,19 @@ def solve(in_graph_filename, in_demands_filename, out_paths_filename, out_rates_
     with open(out_paths_filename,"w+") as path_file:
         for source in graph.nodes():
             for target in graph.nodes():
-                if source != target and (not((source,target) in set(seen))) and not (target,source) in set(seen):
-                    paths = k_shortest_paths(graph,source,target,5)
-                    #random.shuffle(paths)
+                if source != target and (not((source,target) in set(seen))):
+                    paths = k_shortest_paths(graph,source,target,10)
+                    random.shuffle(paths)
                     count=0
                     for path in paths:
-                        if count <5:
+                       # if count >= 5:
+                        #    break;
+                        #contained = [(x,y) for (x,y) in seen if x not in path[1:-1] and y not in path[1:-1]]
+                        contained=[]
+                        if len(contained) == 0 and count <10:
                             path_file.write("%s\n"%("-".join([str(x) for x in path])))
-                            path.reverse()
-                            path_file.write("%s\n"%("-".join([str(x) for x in path])))
+                            #path.reverse()
+                            #path_file.write("%s\n"%("-".join([str(x) for x in path])))
                             count += 1
                     seen.append((source,target))
 
@@ -94,13 +98,9 @@ def solve(in_graph_filename, in_demands_filename, out_paths_filename, out_rates_
 
         # for each flow with demand, create a FlowRate object
         flowrate=[]
-        # deal with duplicate paths
-        counter = 0
-        for flow in all_flows: # flow corresponds to a path --> each has its own rate
-            elem = FlowRate(counter,flow)
-            flowrate.append(elem)
-            path_rate_name[elem.name]=elem.path
-            counter += 1
+        for flow in all_flows:
+            flowrate.append(FlowRate(all_flows.index(flow), flow))
+            path_rate_name[flowrate[-1].name]=flowrate[-1].path
 
         # constraint 1: path rate >= 0
         for f in flowrate:
@@ -117,9 +117,9 @@ def solve(in_graph_filename, in_demands_filename, out_paths_filename, out_rates_
             if (f.path[0],f.path[-1]) not in flows_demand.keys():
                 flows_demand[(f.path[0],f.path[-1])] = [f.name]
             else:
-                flows_demand[(f.path[0],f.path[-1])].append(f.name) # remember all paths(aka. rates) between src and dst
+                flows_demand[(f.path[0],f.path[-1])].append(f.name)
 
-        # constraint 2: can not exceed link capacities
+ # constraint 2: can not exceed link capacities
         for key, value in edges_demand.items():
             weight = graph.get_edge_data(*key)['weight']
             if len(value) < 2:
