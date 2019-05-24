@@ -61,7 +61,7 @@ def solve(in_graph_filename, in_demands_filename, out_paths_filename, out_rates_
         for source in graph.nodes():
             for target in graph.nodes():
                 if source != target and (not((source,target) in set(seen))):
-                    paths = k_shortest_paths(graph,source,target,1)
+                    paths = k_shortest_paths(graph,source,target,10)
                     random.shuffle(paths)
                     count=0
                     for path in paths:
@@ -69,7 +69,7 @@ def solve(in_graph_filename, in_demands_filename, out_paths_filename, out_rates_
                         #    break;
                         #contained = [(x,y) for (x,y) in seen if x not in path[1:-1] and y not in path[1:-1]]
                         contained=[]
-                        if len(contained) == 0 and count <1:
+                        if len(contained) == 0 and count <10:
                             path_file.write("%s\n"%("-".join([str(x) for x in path])))
                             #path.reverse()
                             #path_file.write("%s\n"%("-".join([str(x) for x in path])))
