@@ -74,9 +74,9 @@ def solve(in_graph_filename, in_demands_filename, in_paths_filename, out_rates_f
             flowrate.append(FlowRate(all_flows.index(flow), flow))
             path_rate_name[flowrate[-1].name]=flowrate[-1].path
 
-        # constraint 1: path rate > 0
+        # constraint 1: path rate >= 0
         for f in flowrate:
-            program_file.write("%s > 0.0; \n" %(f.name))
+            program_file.write("%s >= 0.0; \n" %(f.name))
 
             # populate edge dictionary:
             for e in f.edges:
