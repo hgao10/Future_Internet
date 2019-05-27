@@ -33,6 +33,7 @@ except (ImportError, SystemError):
 import networkx as nx
 import random
 from itertools import islice
+from collections import defaultdict
 
 class FlowRate():
     def __init__(self,name, path):
@@ -60,20 +61,19 @@ def solve(in_graph_filename, in_demands_filename, out_paths_filename, out_rates_
     with open(out_paths_filename,"w+") as path_file:
         for source in graph.nodes():
             for target in graph.nodes():
-                if source != target and (not((source,target) in set(seen))):
-                    paths = k_shortest_paths(graph,source,target,10)
-                    random.shuffle(paths)
+                if source != target and (not((source,target) in set(seen))) and not((target,source) in set(seen)):
+                    paths = k_shortest_paths(graph,source,target,10,'weight')
+                    #random.shuffle(paths)
                     count=0
                     for path in paths:
-                       # if count >= 5:
-                        #    break;
-                        #contained = [(x,y) for (x,y) in seen if x not in path[1:-1] and y not in path[1:-1]]
-                        contained=[]
-                        if len(contained) == 0 and count <10:
+                        if count <10:
                             path_file.write("%s\n"%("-".join([str(x) for x in path])))
-                            #path.reverse()
-                            #path_file.write("%s\n"%("-".join([str(x) for x in path])))
+                            path.reverse()
+                            path_file.write("%s\n"%("-".join([str(x) for x in path])))
                             count += 1
+                            for s,t in list(nx.utils.pairwise(path))[1:-1]:
+                                # change weight of edges to discourage their use in shortest path
+                                graph[s][t]['weight'] += 1
                     seen.append((source,target))
 
     # Read the paths from file
@@ -121,7 +121,7 @@ def solve(in_graph_filename, in_demands_filename, out_paths_filename, out_rates_
 
  # constraint 2: can not exceed link capacities
         for key, value in edges_demand.items():
-            weight = graph.get_edge_data(*key)['weight']
+            weight = 100 #graph.get_edge_data(*key)['weight']
             if len(value) < 2:
                 program_file.write("%s <= %s; \n" %( value[0], weight))
             else:
