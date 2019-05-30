@@ -31,10 +31,6 @@ except (ImportError, SystemError):
     import assignment_parameters
 
 import networkx as nx
-import random
-from itertools import islice
-from collections import defaultdict
-
 class FlowRate():
     def __init__(self,name, path):
         self.name = "r"+ str(name)
@@ -47,8 +43,6 @@ class FlowRate():
     def edges():
         return self.edges
 
-def k_shortest_paths(G, source, target, k, weight=None):
-    return list(islice(nx.shortest_simple_paths(G, source, target, weight=weight), k))
 
 def solve(in_graph_filename, in_demands_filename, out_paths_filename, out_rates_filename):
 
@@ -56,43 +50,51 @@ def solve(in_graph_filename, in_demands_filename, out_paths_filename, out_rates_
     graph = wanteutility.read_graph(in_graph_filename)
     demands = wanteutility.read_demands(in_demands_filename)
 
+    demand_paths ={} # key: (src, dst), value: all shortest paths per src dst pair [[0,1,2],[0,3,2]]
     # Generate paths and write them to out_paths_filename
-    seen = []
-    new_graph=graph.copy()
-    with open(out_paths_filename,"w+") as path_file:
-        for source in graph.nodes():
-            for target in graph.nodes():
-                if source != target and (not((source,target) in set(seen))) and not((target,source) in set(seen)):
-                    paths = k_shortest_paths(new_graph,source,target,10,'weight')
-                    #random.shuffle(paths)
-                    count=0
-                    for path in paths:
-                        if count <10:
-                            path_file.write("%s\n"%("-".join([str(x) for x in path])))
-                            path.reverse()
-                            path_file.write("%s\n"%("-".join([str(x) for x in path])))
-                            count += 1
-                            for s,t in list(nx.utils.pairwise(path))[1:-1]:
-                                # change weight of edges to discourage their use in shortest path
-                                new_graph[s][t]['weight'] += 1
-                    seen.append((source,target))
+    # for d in demands:
+    #     #shortest_paths=[p for p in nx.all_shortest_paths(graph,source=d[0],target=d[1])]
+    #     # shortest_paths_string=[map(str, l) for l in shortest_paths]
+    #     # # [[0,1,2],[0,3,2]] -> [[0-1-2],[0-3-2]]
+    #     # demand_paths[d]= [ "-".join(dp) for dp in shortest_paths_string]
+    #     demand_paths[d]= [tuple(p) for p in nx.all_shortest_paths(graph,source=d[0],target=d[1])]
+    #     if len(demand_paths[d]) > 10:
+    #         # print("there are more than 10 shortest paths: %s\n" %(len(demand_paths[d])))
+    #         demand_paths[d]=demand_paths[d][:10]
 
-    # Read the paths from file
+    for src in graph.nodes():
+        src =str(src)
+        for dst in graph.nodes():
+            dst = str(dst)
+            if dst != src:
+                demand_paths[(src, dst)]= [tuple(p) for p in nx.all_shortest_paths(graph,source=int(src),target=int(dst))]
+                if len(demand_paths[(src,dst)]) > 3:
+                    # print("there are more than 10 shortest paths: %s\n" %(len(demand_paths[d])))
+                    demand_paths[(src,dst)]=demand_paths[(src,dst)][:3]
+
+    # paths_x_to_y = wanteutility.get_paths_x_to_y(all_paths, graph)
+
+    # Max-min linear program
+    all_flows=[]
+    # paths that have demands
+    with open(out_paths_filename,"w") as path_file:
+        for i in demand_paths.values():
+            for pt in i:
+                all_flows.append(pt)
+                # pt (1,2,3)
+                str_paths = [str(l) for l in list(pt)]
+                paths="-".join(str_paths)
+                path_file.write("%s \n"%(paths))
+
     all_paths = wanteutility.read_all_paths(out_paths_filename)
-    paths_x_to_y = wanteutility.get_paths_x_to_y(all_paths, graph)
-    all_flows = wanteutility.get_all_flows(all_paths, demands) # paths that have demands
-    
+
+    # print(all_flows)
     edges_demand = {}
     flows_demand= {}
     path_rate_name = {} # key: flow name r1, r2 , value: path (0,1,2)
-    final_rate={} # key: path, value: flow rate result from LP resolver
+    final_rate={} # key: path, value: flow rate result from LP resolver 
     # Write the linear program
     with open("../myself/output/c/program.lp", "w+") as program_file:
-        #example        max: x1 - x2;
-                        # x1 >= 0.3;
-                        # x1 <= 30.6;
-                        # x2 >= 24.9;
-                        # x2 <= 50.1;
 
         # write objective function
         program_file.write("max: Z; \n")
@@ -103,9 +105,9 @@ def solve(in_graph_filename, in_demands_filename, out_paths_filename, out_rates_
             flowrate.append(FlowRate(all_flows.index(flow), flow))
             path_rate_name[flowrate[-1].name]=flowrate[-1].path
 
-        # constraint 1: path rate >= 0
+        # constraint 1: path rate > 0
         for f in flowrate:
-            program_file.write("%s >= 0.0; \n" %(f.name))
+            program_file.write("%s > 0.0; \n" %(f.name))
 
             # populate edge dictionary:
             for e in f.edges:
@@ -120,6 +122,8 @@ def solve(in_graph_filename, in_demands_filename, out_paths_filename, out_rates_
             else:
                 flows_demand[(f.path[0],f.path[-1])].append(f.name)
 
+        # print("edges demand: %s \n"%(edges_demand))
+        # print("flows_demand %s \n"%(flows_demand))
         # constraint 2: can not exceed link capacities
         for key, value in edges_demand.items():
             weight = graph.get_edge_data(*key)['weight']
@@ -142,7 +146,7 @@ def solve(in_graph_filename, in_demands_filename, out_paths_filename, out_rates_
     )
 
     # Retrieve the rates from the variable values
-    # print("var_val_map :%s" %(var_val_map))
+    print("var_val_map :%s" %(var_val_map))
     for key, value in var_val_map.items():
         if key != 'Z':
             # its a flow rate
@@ -158,7 +162,6 @@ def solve(in_graph_filename, in_demands_filename, out_paths_filename, out_rates_
             else:
                 rate_file.write("%s\n"%(final_rate[path]))
 
-
 def main():
     for appendix in range(assignment_parameters.num_tests_c):
         solve(
@@ -167,13 +170,13 @@ def main():
             "../myself/output/c/path%d.path" % appendix,
             "../myself/output/c/rate%d.rate" % appendix
         )
-    # for appendix in range(2):
-    #         solve(
-    #             "../ground_truth/input/c/graph%d.graph" % appendix,
-    #             "../ground_truth/input/c/demand.demand",
-    #             "../myself/output/c/path%d.path" % appendix,
-    #             "../myself/output/c/rate%d.rate" % appendix
-    #         )
+    # appendix=2
+    # solve(
+    #     "../ground_truth/input/c/graph%d.graph" % appendix,
+    #     "../ground_truth/input/c/demand.demand",
+    #     "../myself/output/c/path%d.path" % appendix,
+    #     "../myself/output/c/rate%d.rate" % appendix
+    # )
 
 
 if __name__ == "__main__":
