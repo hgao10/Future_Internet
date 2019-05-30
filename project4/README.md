@@ -2,12 +2,12 @@
 
 ### Information
 
-* Group number: *[[ your group number ]]*
-* Student NetIDs: *[[ your netid1 ]]*, *[[ your netid2 ]]*
+* Group number: 15 
+* Student NetIDs: 17-937-392, 13-914-973
 
 ### Part C explanation
 
-*[[ Replace this text with an explanation of the algorithm you use to select the paths in part C. ]]*
+We used the shortest_simple_paths algorithm from the networkx library over a weighted graph. Between each pair of vertices we computed 10 of these paths and changed the weight of the edges according to the number that they have been used. This should discourage highly used edges to be used in further iterations of our path selection algorithm. This should help in keeping the rates high on all edges.
 
 ### Getting started
 

@@ -63,7 +63,7 @@ def solve(in_graph_filename, in_demands_filename, out_paths_filename, out_rates_
         for source in graph.nodes():
             for target in graph.nodes():
                 if source != target and (not((source,target) in set(seen))) and not((target,source) in set(seen)):
-                    paths = k_shortest_paths(new_graph,source,target,10,'weight')
+                    paths = k_shortest_paths(graph,source,target,10,'weight')
                     #random.shuffle(paths)
                     count=0
                     for path in paths:
@@ -75,6 +75,7 @@ def solve(in_graph_filename, in_demands_filename, out_paths_filename, out_rates_
                             for s,t in list(nx.utils.pairwise(path))[1:-1]:
                                 # change weight of edges to discourage their use in shortest path
                                 new_graph[s][t]['weight'] += 1
+
                     seen.append((source,target))
 
     # Read the paths from file
